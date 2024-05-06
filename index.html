@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Monitoramento IoT</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mqtt/5.5.5/mqtt.min.js"
+        integrity="sha512-1eAScdrQWW13n+e2EeK2XG1FgeTbA5Pc6Materz228pAhbUkp7jQT1R1wx0BregvLJLDO/E+INSa5loE6xvHBw=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src=" https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js "></script>
+    <style>
+        body {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        body * {
+            margin-bottom: 10px;
+        }
+
+        [hidden] {
+            display: none !important;
+        }
+
+        .graficos-container {
+            display: flex;
+            gap: 2px;
+            justify-content: space-around;
+        }
+
+        .graficos-coluna {
+            min-width: 300px;
+            width: 100%;
+            max-width: 40vw;
+        }
+
+        .btn-container {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            justify-content: space-around;
+            align-items: center;
+            padding-block: 2rem;
+        }
+
+        .btn-container button {
+            padding: 2rem;
+            font-size: 1.1rem;
+            margin: 0 auto;
+            font-weight: 700;
+        }
+
+        .btn-container button[state="ON"] {
+            background-color: greenyellow;
+        }
+
+        .btn-container button[state="OFF"] {
+            background-color: #ff4886;
+        }
+
+        .chartBox {
+            width: 400px;
+            padding: 20px;
+            border-radius: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <label>Identificador único
+            <input value="djedu28" placeholder="clientId" name="clientId" id="clientId">
+        </label>
+        <button onclick="conectar()">Conectar</button>
+    </div>
+    <!-- <div class="graficos-container">
+        <div class="chartBox">
+            <canvas id="temperatureGauge"></canvas>
+        </div>
+        <div class="chartBox">
+            <canvas id="humidityGauge"></canvas>
+        </div>
+    </div> -->
+    <div class="graficos-container">
+        <div class="graficos-coluna">
+            <canvas id="temperatureChart"></canvas>
+        </div>
+        <div class="graficos-coluna">
+            <canvas id="humidityChart"></canvas>
+        </div>
+    </div>
+
+    <div class="btn-container" id="btns" hidden>
+        <label for="ledButton">LED 1</label>
+        <button id="ledButton">On/Off</button>
+    </div>
+    <script>
+        var temperatureChart;
+        var humidityChart;
+
+        function initTemperatureChart() {
+            if (temperatureChart) {
+                return;
+            }
+            const ctx = document.getElementById('temperatureChart').getContext('2d');
+            temperatureChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Temperatura',
+                        data: [],
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1,
+                        pointStyle: 'circle',
+                        pointRadius: 7,
+                        pointHoverRadius: 15
+                    }]
+                },
+                // options: {
+                //     responsive: true,
+                // }
+                // options: {
+                //     scales: {
+                //         y: {
+                //             beginAtZero: true
+                //         }
+                //     }
+                // }
+            });
+        }
+
+        function initHumidityChart() {
+            if (humidityChart) {
+                return;
+            }
+            const ctx = document.getElementById('humidityChart').getContext('2d');
+            humidityChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Umidade relativa',
+                        data: [],
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1,
+                        pointRadius: 7,
+                        pointHoverRadius: 15
+                    }]
+                },
+
+                // options: {
+                //     scales: {
+                //         y: {
+                //             beginAtZero: true
+                //         }
+                //     }
+                // }
+            });
+        }
+
+        function initButton() {
+            document.getElementById("btns").removeAttribute("hidden")
+        }
+    </script>
+    <script>
+
+
+        var client;
+        function conectar() {
+
+            const servidor = "test.mosquitto.org"
+            const clientId = document.getElementById("clientId").value || "clientId";
+
+            const host = `ws://${servidor}:8080/ws`
+
+            const options = {
+                keepalive: 30,
+                clientId,
+                protocolId: 'MQTT',
+                protocolVersion: 4,
+                clean: true,
+                reconnectPeriod: 1000,
+                connectTimeout: 30 * 1000,
+                will: {
+                    topic: 'WillMsg',
+                    payload: 'Conexão fechada de forma anormal..!',
+                    qos: 0,
+                    retain: false
+                },
+                rejectUnauthorized: false
+            }
+
+            console.log('Conectando o cliente MQTT')
+            client = mqtt.connect(host, options)
+
+            client.on("connect", () => {
+                console.log('cliente conectado: ' + clientId)
+                client.subscribe("dj_ping", (err) => {
+                    if (!err) {
+                        client.publish("dj_ping", "Olá MQTT");
+                    }
+                });
+                client.subscribe("temperature");
+                client.subscribe("humidity");
+                client.subscribe("ledControl");
+
+                initTemperatureChart(); // Inicializa o gráfico de temperatura
+                initHumidityChart(); // Inicializa o gráfico de umidade
+                initButton(); // Inicializa os botões
+            });
+
+            client.on('error', (err) => {
+                console.error(err)
+                alert("Erro de conexão, reinicie")
+                client.end()
+            })
+
+            client.on("message", (topic, message, packet) => {
+                // message is Buffer
+                const payload = message.toString();
+                console.info();
+                console.log(
+                    `Mensagem recebida:= ${payload}\n` +
+                    `No tópico:= ${topic}\n\n`
+                )
+                // console.log({ topic, message, packet })
+
+                if (topic === "temperature") {
+                    // Atualizar gráfico de temperatura
+                    updateTemperatureChart(payload);
+                } else if (topic === "humidity") {
+                    // Atualizar gráfico de umidade
+                    updateHumidityChart(payload);
+                }
+
+                // client.end();
+            });
+
+            client.on('close', () => {
+                console.info(clientId + ' desconectado')
+            })
+        }
+
+        document.getElementById('ledButton').addEventListener('click', function () {
+            var state = this.textContent === 'ON' ? 'OFF' : 'ON';
+            client.publish("ledControl", state);
+            this.setAttribute("state", state);
+            this.textContent = state;
+        });
+
+        function updateTemperatureChart(value) {
+            // Atualizar gráfico de temperatura com o valor recebido
+            console.log(`Atualizar gráfico de temperatura com o valor recebido de ${value}`)
+            const newTemperature = parseFloat(value); // Converte a string para float
+            if (!isNaN(newTemperature)) {
+                // Adiciona um novo ponto ao gráfico
+                temperatureChart.data.labels.push(new Date().toLocaleTimeString());
+                temperatureChart.data.datasets[0].data.push(newTemperature);
+                temperatureChart.update(); // Atualiza o gráfico
+            }
+
+        }
+
+        function updateHumidityChart(value) {
+            // Atualizar gráfico de umidade com o valor recebido
+            console.log(`Atualizar gráfico de umidade com o valor recebido de ${value}`)
+            document.getElementById('humidityChart')
+        }
+    </script>
+
+</body>
+
+</html>
