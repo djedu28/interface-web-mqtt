@@ -78,11 +78,6 @@
 </head>
 
 <body onload="onload()">
-    <script>
-        const TOPIC_temperature = "esp32_djedu28_temperature";
-        const TOPIC_humidity = "esp32_djedu28_humidity";
-        const TOPIC_ledControl = "esp32_djedu28_ledControl";
-    </script>
     <div class="inputs-container">
         <div>
             <label>Host do servidor:
@@ -94,6 +89,9 @@
         </div>
         <label>Identificador único:
             <input value="djedu28" placeholder="clientId" name="clientId" id="clientId">
+        </label>
+        <label>Código secreto:
+            <input placeholder="1234" name="cod" id="cod">
         </label>
         <button onclick="conectar()">Conectar</button>
     </div>
@@ -152,16 +150,6 @@
                         pointHoverRadius: 15
                     }]
                 },
-                // options: {
-                //     responsive: true,
-                // }
-                // options: {
-                //     scales: {
-                //         y: {
-                //             beginAtZero: true
-                //         }
-                //     }
-                // }
             });
         }
 
@@ -184,14 +172,6 @@
                         pointHoverRadius: 15
                     }]
                 },
-
-                // options: {
-                //     scales: {
-                //         y: {
-                //             beginAtZero: true
-                //         }
-                //     }
-                // }
             });
         }
 
@@ -203,14 +183,21 @@
         function onload() {
             document.getElementById("clientId").value = "esp32_djedu28_" + Number(Math.random() * 65).toFixed() + Number(Math.random() * 65).toFixed()
         }
-
-
+        var TOPIC_temperature = "esp32_djedu28_temperature";
+        var TOPIC_humidity = "esp32_djedu28_humidity";
+        var TOPIC_ledControl = "esp32_djedu28_ledControl";
         var client;
+
         function conectar() {
 
             const servidor = document.getElementById("servidor").value || "test.mosquitto.org"
             const clientId = document.getElementById("clientId").value || "clientId";
             const porta = document.getElementById("porta").value || "8080";
+            const cod = document.getElementById("cod").value || ""
+
+            TOPIC_temperature = TOPIC_temperature+cod
+            TOPIC_humidity = TOPIC_humidity+cod
+            TOPIC_ledControl = TOPIC_ledControl+cod
 
             // const host = `ws://${servidor}:8080/ws`
             const host = `ws://${servidor}:${porta}/ws`
@@ -267,13 +254,13 @@
                 )
                 // console.log({ topic, message, packet })
 
-                if (topic === "temperature") {
+                if (topic === TOPIC_temperature) {
                     // Atualizar gráfico de temperatura
                     updateTemperatureChart(payload);
-                } else if (topic === "humidity") {
+                } else if (topic === TOPIC_humidity) {
                     // Atualizar gráfico de umidade
                     updateHumidityChart(payload);
-                } else if (topic === "ledControl") {
+                } else if (topic === TOPIC_ledControl) {
                     // Atualizar gráfico de umidade
                     updateButton(payload);
                 }

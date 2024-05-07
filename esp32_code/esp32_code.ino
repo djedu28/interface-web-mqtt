@@ -18,10 +18,11 @@ const char* password = "";
 // Substitua com o endereço do seu broker MQTT
 const char* mqtt_server = "test.mosquitto.org";
 const char* clientId = "esp32_djedu28_397207107109591041";
+const String cod = "";
 
-const char* TOPIC_temperature = "esp32_djedu28_temperature";
-const char* TOPIC_humidity = "esp32_djedu28_humidity";
-const char* TOPIC_ledControl = "esp32_djedu28_ledControl";;
+const char* TOPIC_temperature = String("esp32_djedu28_temperature"+cod).c_str();
+const char* TOPIC_humidity = String("esp32_djedu28_humidity"+cod).c_str();
+const char* TOPIC_ledControl = String("esp32_djedu28_ledControl"+cod).c_str();
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -36,15 +37,20 @@ PubSubClient client(espClient);
 
 DHT dht(DHTPIN, DHTTYPE);
 
+unsigned int tempo_ans;
+
 void setup() {
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, HIGH);
   Serial.begin(115200);
+  Serial.print("Iniciando ");
+  Serial.println(TOPIC_temperature);
   setup_wifi();
   client.setServer(mqtt_server, 1883);
   client.setCallback(callback);
   dht.begin();
   digitalWrite(LED_PIN, LOW);
+  tempo_ans = millis();
 }
 
 void setup_wifi() {
@@ -71,6 +77,11 @@ void reconnect() {
     if (client.connect(clientId)) {
       Serial.println("conectado");
       client.subscribe(TOPIC_ledControl);
+      if (digitalRead(LED_PIN)) {
+        client.publish(TOPIC_ledControl, String("ON").c_str());
+      } else {
+        client.publish(TOPIC_ledControl, String("OFF").c_str());
+      }
     } else {
       Serial.print("falhou, rc =");
       Serial.print(client.state());
@@ -97,15 +108,13 @@ void loop() {
     //Publica os dados de temperatura e umidade
     client.publish(TOPIC_temperature, String(temperature).c_str());
     client.publish(TOPIC_humidity, String(humidity).c_str());
-    if (digitalRead(PIN_LED)) {
-      client.publish(TOPIC_ledControl, String("ON").c_str());
-    } else {
-      client.publish(TOPIC_ledControl, String("OFF").c_str());
-    }
+    
+    tempo_ans = millis();
+    Serial.print("S");
   }
 
 
-  Serial.print("TEMP\t");
+  Serial.print("\tTEMP\t");
   Serial.print(temperature);
   Serial.print("C\t");
 
@@ -128,6 +137,7 @@ void callback(char* topic, byte* message, unsigned int length) {
   Serial.println(messageTemp);
 
   if (String(topic) == TOPIC_ledControl) {
+    Serial.println("atualizando led");
     if (messageTemp == "ON") {
       digitalWrite(LED_PIN, HIGH);
     } else if (messageTemp == "OFF") {
