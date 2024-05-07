@@ -78,11 +78,6 @@
 </head>
 
 <body onload="onload()">
-    <script>
-        const TOPIC_temperature = "esp32_djedu28_temperature";
-        const TOPIC_humidity = "esp32_djedu28_humidity";
-        const TOPIC_ledControl = "esp32_djedu28_ledControl";
-    </script>
     <div class="inputs-container">
         <div>
             <label>Host do servidor:
@@ -119,7 +114,7 @@
         <button id="ledButton">On/Off</button>
 
     </div>
-    <div style="padding-block: 3rem;" hidden>
+    <div style="padding-block: 3rem;" >
         <label>Temperatura
             <input value="50" placeholder="temperatura" name="input_temperature" id="input_temperature">
         </label>
@@ -242,9 +237,9 @@
                         client.publish("dj_ping", "Olá MQTT");
                     }
                 });
-                client.subscribe(TOPIC_temperature);
-                client.subscribe(TOPIC_humidity);
-                client.subscribe(TOPIC_ledControl);
+                client.subscribe("temperature");
+                client.subscribe("humidity");
+                client.subscribe("ledControl");
 
                 initTemperatureChart(); // Inicializa o gráfico de temperatura
                 initHumidityChart(); // Inicializa o gráfico de umidade
@@ -289,7 +284,7 @@
 
         document.getElementById('ledButton').addEventListener('click', function () {
             var state = this.textContent === 'ON' ? 'OFF' : 'ON';
-            client.publish(TOPIC_ledControl, state);
+            client.publish("ledControl", state);
             this.setAttribute("state", state);
             this.textContent = state;
         });
@@ -320,7 +315,7 @@
             }
         }
 
-        function updateButton(value){
+        function updateButton(value) {
             const value_data = `${value}`.toUpperCase()
             const led_btn = document.getElementById('ledButton')
             var state = ["ON", "OFF"].includes(value_data) ? value_data : 'OFF';
@@ -334,13 +329,13 @@
             const input_humidity = Number(document.getElementById('input_humidity').value)
 
             if (!isNaN(input_temperature)) {
-                client.publish(TOPIC_temperature, String(input_temperature));
+                client.publish("temperature", String(input_temperature));
             }
             if (!isNaN(input_humidity)) {
-                client.publish(TOPIC_humidity, String(input_humidity));
+                client.publish("humidity", String(input_humidity));
             }
         }
-        
+
     </script>
 
 </body>
