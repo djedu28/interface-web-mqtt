@@ -20,9 +20,9 @@ const char* mqtt_server = "test.mosquitto.org";
 const char* clientId = "esp32_djedu28_397207107109591041";
 const String cod = "";
 
-const char* TOPIC_temperature = String("esp32_djedu28_temperature"+cod).c_str();
-const char* TOPIC_humidity = String("esp32_djedu28_humidity"+cod).c_str();
-const char* TOPIC_ledControl = String("esp32_djedu28_ledControl"+cod).c_str();
+const char* TOPIC_temperature = String(String("esp32_djedu28_temperature")+cod).c_str();
+const char* TOPIC_humidity = String(String("esp32_djedu28_humidity")+cod).c_str();
+const char* TOPIC_ledControl = String(String("esp32_djedu28_ledControl")+cod).c_str();
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -77,11 +77,11 @@ void reconnect() {
     if (client.connect(clientId)) {
       Serial.println("conectado");
       client.subscribe(TOPIC_ledControl);
-      if (digitalRead(LED_PIN)) {
-        client.publish(TOPIC_ledControl, String("ON").c_str());
-      } else {
-        client.publish(TOPIC_ledControl, String("OFF").c_str());
-      }
+      // if (digitalRead(LED_PIN)) {
+      //   client.publish(TOPIC_ledControl, String("ON").c_str());
+      // } else {
+      //   client.publish(TOPIC_ledControl, String("OFF").c_str());
+      // }
     } else {
       Serial.print("falhou, rc =");
       Serial.print(client.state());
@@ -131,7 +131,7 @@ void callback(char* topic, byte* message, unsigned int length) {
   for (int i = 0; i < length; i++) {
     messageTemp += (char)message[i];
   }
-  Serial.print("Mensagem recebida[");
+  Serial.print("Mensagem recebida[ ");
   Serial.print(topic);
   Serial.print("]: ");
   Serial.println(messageTemp);
