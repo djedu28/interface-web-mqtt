@@ -20,9 +20,13 @@ const char* mqtt_server = "test.mosquitto.org";
 const char* clientId = "esp32_djedu28_397207107109591041";
 const String cod = "";
 
-const char* TOPIC_temperature = String(String("esp32_djedu28_temperature")+cod).c_str();
-const char* TOPIC_humidity = String(String("esp32_djedu28_humidity")+cod).c_str();
-const char* TOPIC_ledControl = String(String("esp32_djedu28_ledControl")+cod).c_str();
+const String _TOPIC_temperature = "esp32_djedu28_temperature"+cod;
+const String _TOPIC_humidity = "esp32_djedu28_humidity"+cod;
+const String _TOPIC_ledControl = "esp32_djedu28_ledControl"+cod;
+
+const char* TOPIC_temperature = _TOPIC_temperature.c_str();
+const char* TOPIC_humidity = _TOPIC_humidity.c_str();
+const char* TOPIC_ledControl = _TOPIC_ledControl.c_str();
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -104,7 +108,7 @@ void loop() {
     return;
   }
 
-  if (millis() - tempo_ans >= 5000) {
+  if (millis() - tempo_ans >= 1000) {
     //Publica os dados de temperatura e umidade
     client.publish(TOPIC_temperature, String(temperature).c_str());
     client.publish(TOPIC_humidity, String(humidity).c_str());
